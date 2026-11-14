@@ -1,3 +1,4 @@
+import { isCustomMediaPreset } from '@/lib/config/preset-ids';
 import type { ConfiguredTTSVoice } from '@/lib/audio/types';
 /**
  * Media and tool capabilities from slot resolutions (RFC #1701, tracked in
@@ -156,11 +157,8 @@ async function fromTarget(
   }
   const managed = target.providerSource !== 'workspace';
   if (!managed) {
-    // Media, search and document adapters each connect their own way; a
-    // workspace provider reaches them only at the preset's own endpoints. A
-    // custom endpoint (and a proxy) is the deployment's to configure; for chat
-    // a workspace endpoint goes through the pinned, redirect-refusing
-    // transport instead (lib/server/model-config/llm.ts).
+    // Custom media relay presets use pinned, public-only provider transports.
+    // Other workspace services remain limited to approved endpoints.
     if (target.proxy) {
       throw new WorkspaceEndpointError(
         'A proxy can only be configured by the deployment (openmaic.yml)',
@@ -168,6 +166,7 @@ async function fromTarget(
     }
     if (
       target.customBaseUrl &&
+      !isCustomMediaPreset(target.presetId) &&
       !acceptsWorkspaceToolBaseUrl(getSlot(slot).capability, target.registryId, target.baseUrl)
     ) {
       throw new WorkspaceEndpointError(
@@ -194,11 +193,8 @@ async function fromTarget(
     ...(target.voices !== undefined ? { voices: target.voices } : {}),
     ...(target.options !== undefined ? { options: target.options } : {}),
     managed,
-    // A workspace provider reaches only its preset's own public endpoint (a
-    // custom one and a local-default preset are refused above), exactly the
-    // endpoint a deployment's default would use: registry-approved endpoints, so
-    // the transports keep the operator's policy.
-    userEndpoint: false,
+    // Custom workspace endpoints must use the strict public-network policy.
+    userEndpoint: !managed && !!target.customBaseUrl,
     origin,
   };
 }

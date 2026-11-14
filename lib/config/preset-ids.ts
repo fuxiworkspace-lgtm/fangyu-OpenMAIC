@@ -56,3 +56,14 @@ export const RETIRED_PRESETS: Readonly<Record<string, { reason: string; envPrefi
 export function retiredPresetReason(presetId: string): string | undefined {
   return Object.hasOwn(RETIRED_PRESETS, presetId) ? RETIRED_PRESETS[presetId].reason : undefined;
 }
+
+/** Explicit workspace relay presets; each is restricted to its declared protocol. */
+export const CUSTOM_MEDIA_PRESETS: Record<string, string> = {
+  image: 'custom-openai-image',
+  video: 'custom-xai-video',
+  tts: 'custom-openai-tts',
+  asr: 'custom-openai-asr',
+};
+export function isCustomMediaPreset(id: string): boolean {
+  return Object.values(CUSTOM_MEDIA_PRESETS).includes(id);
+}

@@ -1,3 +1,4 @@
+import { isCustomMediaPreset } from '@/lib/config/preset-ids';
 import type { ConfiguredTTSVoice } from '@/lib/audio/types';
 /**
  * The model settings a workspace sees and edits (RFC #1701, tracked in #1725,
@@ -368,7 +369,7 @@ function workspacePresetProblem(preset: ProviderPreset): string | undefined {
   if (preset.requiresCredentials) {
     return `${preset.name} authenticates with a key pair, which only the deployment (openmaic.yml) can configure`;
   }
-  if (preset.requiresBaseUrl && !preset.capabilities.chat) {
+  if (preset.requiresBaseUrl && !preset.capabilities.chat && !isCustomMediaPreset(preset.id)) {
     return `A custom endpoint for ${preset.name} can only be configured by the deployment (openmaic.yml)`;
   }
   for (const [capability, target] of Object.entries(preset.capabilities) as [
@@ -564,7 +565,10 @@ export function modelSettingsView(stored: StoredWorkspaceConfig | null): ModelSe
           kind: preset.kind,
           capabilities,
           requiresBaseUrl: needsOwnEndpoint(preset),
-          customEndpoint: Boolean(preset.capabilities.chat) || regionalEndpoint !== undefined,
+          customEndpoint:
+            Boolean(preset.capabilities.chat) ||
+            regionalEndpoint !== undefined ||
+            isCustomMediaPreset(preset.id),
           ...(regionalEndpoint ? { regionalEndpoint } : {}),
           // Only what can be assigned: a capability the operator switched off is out.
           recommended: Object.fromEntries(
@@ -598,12 +602,10 @@ async function checkProvider(id: string, provider: Provider): Promise<void> {
       'A proxy can only be configured by the deployment (openmaic.yml)',
     );
   }
-  // Only chat goes through the pinned, redirect-refusing transport: media,
-  // search and document services are reached at a preset's own endpoints
-  // (lib/server/model-config/media.ts refuses anything else at run time). A
-  // regional service's own endpoint names its region on the official host.
+  // Workspace media relays use dedicated presets and pinned public-only transports.
+  // Other media and tool services remain limited to their approved endpoints.
   const regional = presetRegionalEndpointTemplate(preset);
-  if (provider.baseUrl && !preset.capabilities.chat) {
+  if (provider.baseUrl && !preset.capabilities.chat && !isCustomMediaPreset(preset.id)) {
     if (regional && presetOfficialRegionalEndpoint(preset, provider.baseUrl)) return;
     throw new ModelSettingsError(
       'INVALID_PROVIDER',
@@ -823,6 +825,7 @@ export async function applyModelSettingsChange(
           if (
             target?.providerSource === 'workspace' &&
             target.customBaseUrl &&
+            !isCustomMediaPreset(target.presetId) &&
             !acceptsWorkspaceToolBaseUrl(
               getSlot(slot as SlotId).capability,
               target.registryId,

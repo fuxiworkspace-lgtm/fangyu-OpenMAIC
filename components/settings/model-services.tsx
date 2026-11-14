@@ -49,6 +49,8 @@ import { cn } from '@/lib/utils';
 import type { SettingsSection } from '@/lib/types/settings';
 
 import { AddProviderDialog } from './add-provider-dialog';
+import { CustomMediaPanel } from './custom-media-panel';
+import { isCustomMediaPreset } from '@/lib/config/preset-ids';
 import { ASRSettings } from './asr-settings';
 import { ImageSettings } from './image-settings';
 import { PDFSettings } from './pdf-settings';
@@ -152,6 +154,7 @@ export function ModelServicesPanel({
   }, [view, capability]);
   const [selected, setSelected] = useState<Partial<Record<ServiceTab, string>>>({});
   const [showAddProvider, setShowAddProvider] = useState(false);
+  const [addingMedia, setAddingMedia] = useState(false);
   const [deleting, setDeleting] = useState<ServiceEntry | null>(null);
 
   // Until one is picked, the service in use (its voices and settings), else the first.
@@ -263,7 +266,10 @@ export function ModelServicesPanel({
               key={id}
               role="tab"
               aria-selected={active}
-              onClick={() => onTabChange(id)}
+              onClick={() => {
+                setAddingMedia(false);
+                onTabChange(id);
+              }}
               className={cn(
                 'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors',
                 active
@@ -290,26 +296,58 @@ export function ModelServicesPanel({
               configured: isEntryConfigured(item, capability),
             }))}
             selectedProviderId={entry?.id ?? ''}
-            onSelect={select}
+            onSelect={(id) => {
+              setAddingMedia(false);
+              select(id);
+            }}
             onAddProvider={
-              capability === 'chat' && canAdd ? () => setShowAddProvider(true) : undefined
+              canAdd && ['chat', 'image', 'video', 'tts', 'asr'].includes(capability)
+                ? () => (capability === 'chat' ? setShowAddProvider(true) : setAddingMedia(true))
+                : undefined
             }
           />
         </div>
 
         <div className="min-w-0 flex-1 overflow-y-auto p-4">
-          {header()}
-          {panelProps && (
-            <div className="mt-4" key={`${tab}:${entry!.id}`}>
-              {tab === 'providers' && <ProviderConfigPanel {...panelProps} />}
-              {tab === 'image' && <ImageSettings {...panelProps} />}
-              {tab === 'video' && <VideoSettings {...panelProps} />}
-              {tab === 'tts' && <TTSSettings {...panelProps} />}
-              {tab === 'asr' && <ASRSettings {...panelProps} />}
-              {tab === 'pdf' && <PDFSettings {...panelProps} />}
-              {tab === 'web-fetch' && <WebFetchSettings {...panelProps} />}
-              {tab === 'web-search' && <WebSearchSettings {...panelProps} />}
-            </div>
+          {addingMedia ? (
+            <CustomMediaPanel
+              key={`new:${tab}`}
+              view={view}
+              apply={apply}
+              capability={capability}
+              onSaved={(id) => {
+                setAddingMedia(false);
+                select(id);
+              }}
+            />
+          ) : (
+            <>
+              {header()}
+              {panelProps && (
+                <div className="mt-4" key={`${tab}:${entry!.id}`}>
+                  {tab === 'providers' && <ProviderConfigPanel {...panelProps} />}
+                  {entry?.provider && isCustomMediaPreset(entry.provider.preset) ? (
+                    <CustomMediaPanel
+                      view={view}
+                      apply={apply}
+                      capability={capability}
+                      entry={entry}
+                      onSaved={select}
+                    />
+                  ) : (
+                    <>
+                      {tab === 'image' && <ImageSettings {...panelProps} />}
+                      {tab === 'video' && <VideoSettings {...panelProps} />}
+                      {tab === 'tts' && <TTSSettings {...panelProps} />}
+                      {tab === 'asr' && <ASRSettings {...panelProps} />}
+                      {tab === 'pdf' && <PDFSettings {...panelProps} />}
+                      {tab === 'web-fetch' && <WebFetchSettings {...panelProps} />}
+                      {tab === 'web-search' && <WebSearchSettings {...panelProps} />}
+                    </>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

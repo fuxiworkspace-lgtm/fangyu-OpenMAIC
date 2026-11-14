@@ -23,7 +23,7 @@ import {
 import type { MediaProviderFetch } from '@/lib/media/types';
 
 const MEDIA_PROVIDER_POLICY: ProviderFetchPolicy = {
-  allowLocalNetworks: undefined,
+  allowLocalNetworks: false,
   rejectRedirects: true,
 };
 

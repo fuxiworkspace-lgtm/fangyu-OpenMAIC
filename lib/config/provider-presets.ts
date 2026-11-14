@@ -144,6 +144,21 @@ function singlePresets(): ProviderPreset[] {
     trustsModelCatalogue: false,
     apiKeyOptional: true,
   });
+  for (const [id, capability, registryId] of [
+    ['custom-openai-image', 'image', 'openai-image'],
+    ['custom-xai-video', 'video', 'grok-video'],
+    ['custom-openai-tts', 'tts', 'openai-tts'],
+    ['custom-openai-asr', 'asr', 'openai-whisper'],
+  ] as const) {
+    presets.push({
+      id,
+      name: 'Custom relay',
+      kind: 'single',
+      capabilities: { [capability]: { registryId } },
+      requiresBaseUrl: true,
+      trustsModelCatalogue: false,
+    });
+  }
   return presets;
 }
 

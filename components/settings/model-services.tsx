@@ -294,6 +294,12 @@ export function ModelServicesPanel({
               icon: entryIcon(item, capability),
               registryId: item.serviceId ?? item.registryId,
               configured: isEntryConfigured(item, capability),
+              ...(item.provider && isCustomMediaPreset(item.provider.preset)
+                ? {
+                    modelId: item.provider.models?.[0],
+                    inUse: rootUse(view, capability, item.id).inUse,
+                  }
+                : {}),
             }))}
             selectedProviderId={entry?.id ?? ''}
             onSelect={(id) => {

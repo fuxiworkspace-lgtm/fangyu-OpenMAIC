@@ -14,6 +14,8 @@ export interface ProviderListItem {
   /** The registry entry, for the logo's dark-mode treatment and signup links. */
   registryId: string;
   configured: boolean;
+  modelId?: string;
+  inUse?: boolean;
 }
 
 interface ProviderListProps {
@@ -121,7 +123,16 @@ export function ProviderList({
                     {configured
                       ? t('settings.modelServices.configured')
                       : t('settings.modelServices.notConfigured')}
+                    {provider.inUse && ` · ${t('settings.serverConfig.inUse')}`}
                   </span>
+                  {provider.modelId && (
+                    <span
+                      className="block truncate text-[10px] text-muted-foreground"
+                      title={provider.modelId}
+                    >
+                      {provider.modelId}
+                    </span>
+                  )}
                 </span>
               </button>
               {signupLinks && (

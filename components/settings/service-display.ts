@@ -1,3 +1,4 @@
+import { isCustomMediaPreset } from '@/lib/config/preset-ids';
 /**
  * How the settings name and picture a service: each capability's built-in
  * services (names, logos, whether they need a key), and the name and logo of
@@ -136,6 +137,8 @@ export function entryName(entry: ServiceEntry, capability: SlotCapability, t: T)
   if (!provider || entry.serviceId) {
     return REGISTRY_INFO[capability].name(entry.serviceId ?? entry.registryId, t);
   }
+  if (isCustomMediaPreset(provider.preset))
+    return `${t('settings.customProvider')} · ${provider.id}`;
   const presetName =
     provider.preset === 'openai-compatible'
       ? t('settings.serverConfig.openaiCompatible')
@@ -149,7 +152,11 @@ export function entryIcon(entry: ServiceEntry, capability: SlotCapability): stri
   const plan = entry.provider ? PLAN_BY_PRESET.get(entry.provider.preset) : undefined;
   if (plan) return plan.icon;
   if (entry.serviceId) return REGISTRY_INFO[capability].icon(entry.serviceId);
-  if (entry.provider?.preset === 'openai-compatible') return undefined;
+  if (
+    entry.provider &&
+    (entry.provider.preset === 'openai-compatible' || isCustomMediaPreset(entry.provider.preset))
+  )
+    return undefined;
   return REGISTRY_INFO[capability].icon(entry.registryId);
 }
 

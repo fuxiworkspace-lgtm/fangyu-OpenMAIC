@@ -314,7 +314,7 @@ function capabilityModels(
         ? deploymentAuthorizedModels(deployment, providerId, capability)
         : pinned;
     const models =
-      (capability === 'chat' && pinned?.length) || strictModels
+      ((capability === 'chat' || isCustomMediaPreset(preset.id)) && pinned?.length) || strictModels
         ? (authorized ?? []).map(
             (id) =>
               offered.find((model) => model.id === id) ??
@@ -511,7 +511,10 @@ export function modelSettingsView(stored: StoredWorkspaceConfig | null): ModelSe
       ...(provider.voices ? { voices: provider.voices.map((voice) => ({ ...voice })) } : {}),
       capabilities: capabilityModels(getProviderPreset(provider.preset), provider.models, {
         // An official regional endpoint is the service's own, not a custom one.
-        chatOnly: provider.baseUrl !== undefined && !officialEndpointOf(provider),
+        chatOnly:
+          provider.baseUrl !== undefined &&
+          !officialEndpointOf(provider) &&
+          !isCustomMediaPreset(provider.preset),
         baseUrl: provider.baseUrl,
       }),
       key: {

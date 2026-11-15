@@ -4,6 +4,7 @@ import { applyModelSettingsChange, modelSettingsView } from '@/lib/server/model-
 import { setDeploymentConfigForTests } from '@/lib/server/model-config/runtime';
 import { resolveModelReference } from '@/lib/server/model-config/resolve-slot';
 import { mediaConnectionFor } from '@/lib/server/model-config/media';
+import { serviceEntries } from '@/lib/model-settings/services';
 
 beforeEach(() => setDeploymentConfigForTests({ layer: null, legacy: false, notices: [] }));
 afterEach(() => setDeploymentConfigForTests());
@@ -25,6 +26,27 @@ describe('workspace media relays', () => {
       const assigned = await applyModelSettingsChange(config, {
         kind: 'slots',
         set: { [capability]: 'relay:my-model' },
+      });
+      const view = modelSettingsView({ config: assigned, revision: 1, unreadableSecrets: [] });
+      const saved = view.providers.find((provider) => provider.id === 'relay');
+      expect(saved?.capabilities[capability]?.models.map((model) => model.id)).toEqual([
+        'my-model',
+      ]);
+      expect(view.slots.find((slot) => slot.slot === capability)?.effective).toMatchObject({
+        status: 'assigned',
+        providerId: 'relay',
+        modelId: 'my-model',
+      });
+      expect(
+        serviceEntries(view, capability, []).find((entry) => entry.id === 'relay'),
+      ).toMatchObject({
+        state: 'workspace',
+        registryId: {
+          image: 'openai-image',
+          video: 'grok-video',
+          tts: 'openai-tts',
+          asr: 'openai-whisper',
+        }[capability],
       });
       const target = resolveModelReference('relay:my-model', capability, [
         { source: 'workspace', config: assigned },

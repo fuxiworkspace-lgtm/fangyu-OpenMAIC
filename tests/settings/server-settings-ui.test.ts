@@ -761,7 +761,12 @@ it.each([
   const selected = document.body.querySelector<HTMLElement>('button[aria-pressed="true"]');
   expect(selected?.textContent).toContain('my-relay');
   expect(selected?.textContent).toContain('my-model');
+  expect(selected?.textContent).toContain('settings.customProvider');
   expect(selected?.textContent).toContain('settings.serverConfig.inUse');
+  const rows = [...document.body.querySelectorAll<HTMLElement>('button[aria-pressed]')].filter(
+    (row) => row !== byText('settings.customProvider API'),
+  );
+  expect(rows[0]).toBe(selected);
   expect(
     document.body.querySelector<HTMLInputElement>('input[placeholder="model-id"]')?.value,
   ).toBe('my-model');

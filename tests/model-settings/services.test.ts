@@ -46,6 +46,38 @@ describe('serviceEntries', () => {
     ]);
   });
 
+  it('keeps a saved custom service separate when its name matches a built-in service', () => {
+    const preset: PresetView = {
+      id: 'custom-openai-image',
+      name: 'Custom',
+      kind: 'single',
+      capabilities: {
+        image: { registryId: 'openai-image', models: [{ id: 'my-model', name: 'my-model' }] },
+      },
+      requiresBaseUrl: true,
+      customEndpoint: true,
+      recommended: {},
+    };
+    const builtin: PresetView = {
+      ...preset,
+      id: 'openai-image',
+      name: 'OpenAI',
+      requiresBaseUrl: false,
+    };
+    const view = makeView({
+      presets: [preset, builtin],
+      providers: [workspaceProvider('openai-image', preset)],
+    });
+    const entries = serviceEntries(view, 'image', ['openai-image']);
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toMatchObject({
+      id: 'openai-image',
+      state: 'workspace',
+      provider: { preset: 'custom-openai-image' },
+    });
+    expect(entries[1]).toMatchObject({ registryId: 'openai-image', state: 'available' });
+  });
+
   it('counts a key the server can no longer read as not configured', () => {
     const view = makeView({
       providers: [{ ...workspaceProvider('acme'), key: { set: true, unreadable: true } }],

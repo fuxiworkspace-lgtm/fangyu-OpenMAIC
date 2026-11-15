@@ -147,10 +147,17 @@ export function ModelServicesPanel({
   const capability = TAB_CAPABILITY[tab];
   const entries = useMemo(() => {
     const list = serviceEntries(view, capability, registryIdsFor(view, capability));
-    // Kimi 推广位：置顶于内置服务之首（其他账号/自定义服务在前，其余保持原顺序）。
+    // Keep saved custom services visible above the built-in catalogue.
     const rank = (entry: ServiceEntry) =>
-      entry.provider && !entry.serviceId ? 0 : entry.id === PINNED_PROVIDER_ID ? 1 : 2;
-    return capability === 'chat' ? [...list].sort((a, b) => rank(a) - rank(b)) : list;
+      entry.provider &&
+      (isCustomMediaPreset(entry.provider.preset) || entry.provider.preset === 'openai-compatible')
+        ? 0
+        : capability === 'chat' && entry.provider && !entry.serviceId
+          ? 1
+          : capability === 'chat' && entry.id === PINNED_PROVIDER_ID
+            ? 2
+            : 3;
+    return [...list].sort((a, b) => rank(a) - rank(b));
   }, [view, capability]);
   const [selected, setSelected] = useState<Partial<Record<ServiceTab, string>>>({});
   const [showAddProvider, setShowAddProvider] = useState(false);
@@ -294,9 +301,13 @@ export function ModelServicesPanel({
               icon: entryIcon(item, capability),
               registryId: item.serviceId ?? item.registryId,
               configured: isEntryConfigured(item, capability),
-              ...(item.provider && isCustomMediaPreset(item.provider.preset)
+              ...(item.provider &&
+              (isCustomMediaPreset(item.provider.preset) ||
+                item.provider.preset === 'openai-compatible')
                 ? {
-                    modelId: item.provider.models?.[0],
+                    custom: true,
+                    modelId:
+                      rootUse(view, capability, item.id).modelId ?? item.provider.models?.[0],
                     inUse: rootUse(view, capability, item.id).inUse,
                   }
                 : {}),

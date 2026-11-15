@@ -16,6 +16,7 @@ export interface ProviderListItem {
   configured: boolean;
   modelId?: string;
   inUse?: boolean;
+  custom?: boolean;
 }
 
 interface ProviderListProps {
@@ -133,6 +134,11 @@ export function ProviderList({
                       : t('settings.modelServices.notConfigured')}
                     {provider.inUse && ` · ${t('settings.serverConfig.inUse')}`}
                   </span>
+                  {provider.custom && (
+                    <span className="mt-1 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                      {t('settings.customProvider')}
+                    </span>
+                  )}
                   {provider.modelId && (
                     <span
                       className="block truncate text-[10px] text-muted-foreground"

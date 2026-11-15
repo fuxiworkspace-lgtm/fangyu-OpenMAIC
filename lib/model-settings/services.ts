@@ -6,7 +6,7 @@
  * panel's action into a change; nothing is kept in the browser.
  */
 import type { SlotCapability, SlotId } from '@/lib/config/model-slots';
-import { presetIdFor } from '@/lib/config/preset-ids';
+import { isCustomMediaPreset, presetIdFor } from '@/lib/config/preset-ids';
 import type { ThinkingConfig } from '@/lib/types/provider';
 
 import {
@@ -90,7 +90,9 @@ export function serviceEntries(
     const presetId = presetIdFor(capability, registryId);
     const named = serving.find(
       (provider) =>
-        !placed.has(provider.id) && (provider.id === presetId || provider.id === registryId),
+        !placed.has(provider.id) &&
+        !isCustomMediaPreset(provider.preset) &&
+        (provider.id === presetId || provider.id === registryId),
     );
     if (named) {
       placed.add(named.id);
@@ -105,7 +107,13 @@ export function serviceEntries(
       });
       continue;
     }
-    if (view.providers.some((provider) => provider.preset === presetId || provider.id === presetId))
+    if (
+      view.providers.some(
+        (provider) =>
+          !isCustomMediaPreset(provider.preset) &&
+          (provider.preset === presetId || provider.id === presetId),
+      )
+    )
       continue;
     const preset = view.presets.find(
       (entry) => entry.id === presetId && entry.capabilities[capability],

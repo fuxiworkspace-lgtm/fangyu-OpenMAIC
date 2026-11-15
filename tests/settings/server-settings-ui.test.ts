@@ -718,6 +718,12 @@ it.each([
   expect(document.body.textContent).toContain('Base URL');
   expect(document.body.textContent).toContain('模型 ID');
   expect(document.body.textContent).toContain('API Key');
+  const modelInput = document.body.querySelector<HTMLInputElement>(
+    'input[placeholder="请输入模型 ID"]',
+  )!;
+  type(modelInput, 'https://example.com/v1');
+  expect(document.body.textContent).toContain('这里需要填写模型名称，不是网址');
+  expect(modelInput.getAttribute('aria-invalid')).toBe('true');
 });
 
 it.each([
@@ -768,6 +774,6 @@ it.each([
   );
   expect(rows[0]).toBe(selected);
   expect(
-    document.body.querySelector<HTMLInputElement>('input[placeholder="model-id"]')?.value,
+    document.body.querySelector<HTMLInputElement>('input[placeholder="请输入模型 ID"]')?.value,
   ).toBe('my-model');
 });

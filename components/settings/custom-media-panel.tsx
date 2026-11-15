@@ -32,6 +32,7 @@ export function CustomMediaPanel({
   const [key, setKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const modelIsUrl = /^https?:\/\//i.test(model.trim());
   const existing = entry?.provider;
   const preset = existing?.preset ?? CUSTOM_MEDIA_PRESETS[capability];
   const slug = name
@@ -106,7 +107,17 @@ export function CustomMediaPanel({
       </div>
       <div className="space-y-2">
         <Label>模型 ID</Label>
-        <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="model-id" />
+        <Input
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          placeholder="请输入模型 ID"
+          aria-invalid={modelIsUrl}
+        />
+        {modelIsUrl && (
+          <p className="text-sm text-red-600">
+            这里需要填写模型名称，不是网址。请把网址填在 Base URL 栏。
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Label>API Key {existing?.key?.set ? '（已保存，留空保持不变）' : ''}</Label>
@@ -121,7 +132,12 @@ export function CustomMediaPanel({
       <Button
         onClick={() => void save()}
         disabled={
-          saving || !slug || !baseUrl.trim() || !model.trim() || (!existing?.key?.set && !key)
+          saving ||
+          !slug ||
+          !baseUrl.trim() ||
+          !model.trim() ||
+          modelIsUrl ||
+          (!existing?.key?.set && !key)
         }
       >
         {saving ? '保存中…' : '保存并使用'}

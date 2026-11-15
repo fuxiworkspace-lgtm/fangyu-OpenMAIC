@@ -682,3 +682,29 @@ describe('review fixes', () => {
     }
   });
 });
+
+it.each([
+  ['image', 'image'],
+  ['video', 'video'],
+  ['tts', 'tts'],
+  ['asr', 'asr'],
+] as const)('shows a visible custom API button and opens the %s form', (tab, capability) => {
+  const preset: PresetView = {
+    id: `custom-${tab}`,
+    name: 'Custom',
+    kind: 'single',
+    capabilities: { [capability]: { models: [] } },
+    requiresBaseUrl: true,
+    customEndpoint: true,
+    recommended: {},
+  };
+  const view = makeView({ presets: [preset] });
+  const { apply } = recordingApply(() => view);
+  mount(createElement(ModelServicesPanel, { view, apply, tab, onTabChange: () => {} }));
+  const button = byText('settings.customProvider API');
+  expect(button.closest('.overflow-y-auto')).toBeNull();
+  click(button);
+  expect(document.body.textContent).toContain('Base URL');
+  expect(document.body.textContent).toContain('模型 ID');
+  expect(document.body.textContent).toContain('API Key');
+});

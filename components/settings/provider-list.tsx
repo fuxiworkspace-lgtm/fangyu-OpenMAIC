@@ -42,6 +42,16 @@ export function ProviderList({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {onAddProvider && (
+        <button
+          type="button"
+          onClick={onAddProvider}
+          className="mb-2 flex w-full shrink-0 items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-2 py-2 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          <Plus className="size-4 shrink-0" />
+          {t('settings.addProviderButton')} {t('settings.customProvider')} API
+        </button>
+      )}
       <div className="flex-1 space-y-1 overflow-y-auto p-1">
         {providers.map((provider) => {
           const configured = provider.configured;
@@ -128,17 +138,6 @@ export function ProviderList({
             </div>
           );
         })}
-
-        {/* Add Provider（列表尾部的幽灵行） */}
-        {onAddProvider && (
-          <button
-            onClick={onAddProvider}
-            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-muted-foreground/70 transition-colors hover:bg-background/60 hover:text-foreground"
-          >
-            <Plus className="size-3.5" />
-            {t('settings.addProviderButton')}
-          </button>
-        )}
       </div>
     </div>
   );

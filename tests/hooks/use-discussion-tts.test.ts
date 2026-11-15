@@ -547,6 +547,16 @@ describe('discussion TTS synthesis lookahead', () => {
     expect(hook.shouldHold()).toEqual({ holding: false, segmentDone: 2 });
   });
 
+  it('uses the teacher voice selected in the role panel during discussion', async () => {
+    mocks.settings.agentVoiceOverrides = {
+      teacher: { providerId: 'browser-native-tts', voiceId: 'male-voice' },
+    };
+    act(() => root.render(createElement(Probe)));
+    await seal('A');
+    expect(mocks.speak).toHaveBeenCalledWith('Sentence A.', 'male-voice');
+    mocks.settings.agentVoiceOverrides = {};
+  });
+
   it('preserves browser/server ordering and resumes after browser speech ends while paused', async () => {
     agents = [
       teacher,

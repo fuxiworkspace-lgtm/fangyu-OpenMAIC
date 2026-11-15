@@ -11,6 +11,7 @@ const initialLanguage = i18n.language;
 afterEach(async () => {
   await i18n.changeLanguage(initialLanguage);
   setModelSettingsViewForTests(null);
+  useSettingsStore.setState({ agentVoiceOverrides: {}, agentMode: 'preset' });
   vi.unstubAllGlobals();
 });
 
@@ -68,10 +69,23 @@ describe('browser narration locale', () => {
     expect(spoken[1].lang).toBe('zh-TW');
     engine.stop();
 
-    useSettingsStore.setState({ ttsVoice: 'english' });
+    useSettingsStore.setState({ ttsVoice: 'english', agentVoiceOverrides: {} });
     engine.start();
     await vi.waitFor(() => expect(spoken).toHaveLength(3));
     expect(spoken[2].lang).toBe('en-GB');
+    engine.stop();
+
+    // A teacher's voice picked in the role panel overrides the global voice.
+    useSettingsStore.setState({
+      ttsVoice: 'default',
+      agentMode: 'preset',
+      agentVoiceOverrides: {
+        'default-1': { providerId: 'browser-native-tts', voiceId: 'english' },
+      },
+    });
+    engine.start();
+    await vi.waitFor(() => expect(spoken).toHaveLength(4));
+    expect(spoken[3].lang).toBe('en-GB');
     engine.stop();
   });
 });

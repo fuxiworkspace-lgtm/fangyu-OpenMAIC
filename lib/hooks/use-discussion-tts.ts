@@ -190,7 +190,7 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
       // disabled does the teacher fall back to an enabled provider.
       if (agent.role === 'teacher') {
         const resolved = resolveNarratorVoiceBinding(
-          agent.voiceConfig,
+          agentVoiceOverrides[agent.id] ?? agent.voiceConfig,
           {
             providerId: globalTtsProviderId,
             voiceId: globalTtsVoice,

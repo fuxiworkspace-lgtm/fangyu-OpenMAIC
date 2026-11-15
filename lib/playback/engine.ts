@@ -50,6 +50,8 @@ import { useCanvasStore } from '@/lib/store/canvas';
 import { useSettingsStore } from '@/lib/store/settings';
 import { ttsSelection } from '@/lib/audio/tts-selection';
 import { detectSpeechLang } from '@/lib/audio/browser-tts-preview';
+import { pickNarratorAgent } from '@/lib/audio/agent-voice-options';
+import { useAgentRegistry } from '@/lib/orchestration/registry/store';
 import { createLogger } from '@/lib/logger';
 import i18n from '@/lib/i18n/config';
 
@@ -824,8 +826,19 @@ export class PlaybackEngine {
     }
 
     const settings = useSettingsStore.getState();
-    // The user's voice when it was picked for browser speech.
-    const selectedVoice = ttsSelection()?.voice;
+    // The role picker saves per-agent overrides separately from global TTS settings.
+    // Prefer the active teacher's browser voice, then the global selection.
+    const agents = useAgentRegistry.getState().listAgents();
+    const activeTeachers = agents.filter((agent) =>
+      settings.agentMode === 'auto' ? agent.isGenerated : !agent.isGenerated,
+    );
+    const teacher = pickNarratorAgent(activeTeachers) ?? pickNarratorAgent(agents);
+    const teacherVoice =
+      teacher && (settings.agentVoiceOverrides[teacher.id] ?? teacher.voiceConfig);
+    const selectedVoice =
+      teacherVoice?.providerId === 'browser-native-tts'
+        ? teacherVoice.voiceId
+        : ttsSelection()?.voice;
     const chunkText = this.browserTTSChunks[this.browserTTSChunkIndex];
     const utterance = new SpeechSynthesisUtterance(chunkText);
 

@@ -60,6 +60,42 @@ describe('workspace media relays', () => {
       });
     },
   );
+  it('switches a saved video relay to MiniMax H3 while retaining its key and model', async () => {
+    const original = await applyModelSettingsChange(null, {
+      kind: 'provider',
+      id: 'mita',
+      preset: 'custom-xai-video',
+      baseUrl: 'https://1.1.1.1/api/minimax',
+      apiKey: 'secret',
+      models: ['MiniMax-H3'],
+    });
+    const saved = await applyModelSettingsChange(original, {
+      kind: 'provider',
+      id: 'mita',
+      preset: 'custom-minimax-video',
+      baseUrl: 'https://1.1.1.1/api/minimax',
+      models: ['MiniMax-H3'],
+    });
+    const assigned = await applyModelSettingsChange(saved, {
+      kind: 'slots',
+      set: { video: 'mita:MiniMax-H3' },
+    });
+    const target = resolveModelReference('mita:MiniMax-H3', 'video', [
+      { source: 'workspace', config: assigned },
+    ]);
+    const connection = await mediaConnectionFor('video', target);
+    expect(connection).toMatchObject({
+      providerId: 'minimax-video',
+      apiKey: 'secret',
+      modelId: 'MiniMax-H3',
+      managed: false,
+      userEndpoint: true,
+    });
+    const view = modelSettingsView({ config: assigned, revision: 1, unreadableSecrets: [] });
+    expect(view.providers.find((p) => p.id === 'mita')?.capabilities.video?.models[0]?.id).toBe(
+      'MiniMax-H3',
+    );
+  });
   it('rejects private network endpoints', async () => {
     await expect(
       applyModelSettingsChange(null, {

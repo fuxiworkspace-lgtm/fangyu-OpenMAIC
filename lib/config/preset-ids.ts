@@ -65,5 +65,5 @@ export const CUSTOM_MEDIA_PRESETS: Record<string, string> = {
   asr: 'custom-openai-asr',
 };
 export function isCustomMediaPreset(id: string): boolean {
-  return Object.values(CUSTOM_MEDIA_PRESETS).includes(id);
+  return Object.values(CUSTOM_MEDIA_PRESETS).includes(id) || id === 'custom-minimax-video';
 }

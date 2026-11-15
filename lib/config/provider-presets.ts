@@ -147,6 +147,7 @@ function singlePresets(): ProviderPreset[] {
   for (const [id, capability, registryId] of [
     ['custom-openai-image', 'image', 'openai-image'],
     ['custom-xai-video', 'video', 'grok-video'],
+    ['custom-minimax-video', 'video', 'minimax-video'],
     ['custom-openai-tts', 'tts', 'openai-tts'],
     ['custom-openai-asr', 'asr', 'openai-whisper'],
   ] as const) {

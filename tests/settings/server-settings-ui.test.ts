@@ -63,6 +63,7 @@ vi.mock('@/components/ui/select', async () => {
 
 import { GenerationToolbar } from '@/components/generation/generation-toolbar';
 import { ModelServicesPanel } from '@/components/settings/model-services';
+import { normalizeRelayBaseUrl, existingProtocol } from '@/components/settings/custom-media-panel';
 import { ModelMap } from '@/components/settings/models/model-map';
 import { llmPickerGroups } from '@/components/settings/use-llm-picker-groups';
 import { ProviderConfigPanel } from '@/components/settings/provider-config-panel';
@@ -776,4 +777,13 @@ it.each([
   expect(
     document.body.querySelector<HTMLInputElement>('input[placeholder="请输入模型 ID"]')?.value,
   ).toBe('my-model');
+});
+
+it('recognizes an existing Metaso endpoint and removes pasted endpoint suffixes', () => {
+  const url = 'https://metaso.cn/api/minimax/v2/video_generation ' + String.fromCharCode(92);
+  expect(existingProtocol('custom-xai-video', url)).toBe('custom-minimax-video');
+  expect(normalizeRelayBaseUrl(url, 'custom-minimax-video')).toBe('https://metaso.cn/api/minimax');
+  expect(normalizeRelayBaseUrl('https://api.example.com/v1/', 'custom-xai-video')).toBe(
+    'https://api.example.com/v1',
+  );
 });

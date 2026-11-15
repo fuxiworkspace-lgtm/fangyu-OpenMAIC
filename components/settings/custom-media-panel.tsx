@@ -12,6 +12,25 @@ import type { ServiceEntry } from '@/lib/model-settings/services';
 import { reportApply, rootUse } from './server-settings';
 import { useI18n } from '@/lib/hooks/use-i18n';
 
+export function existingProtocol(preset?: string, baseUrl?: string): string {
+  if (
+    preset === 'custom-minimax-video' ||
+    (preset === 'custom-xai-video' && baseUrl?.includes('metaso.cn/api/minimax'))
+  )
+    return 'custom-minimax-video';
+  return 'custom-xai-video';
+}
+
+export function normalizeRelayBaseUrl(value: string, preset?: string): string {
+  const trimmed = value
+    .trim()
+    .replace(/[\s\\]+$/, '')
+    .replace(/\/+$/, '');
+  return preset === 'custom-minimax-video'
+    ? trimmed.replace(/\/v2(?:\/video_generation)?$/i, '')
+    : trimmed;
+}
+
 export function CustomMediaPanel({
   view,
   apply,
@@ -30,11 +49,15 @@ export function CustomMediaPanel({
   const [baseUrl, setBaseUrl] = useState(entry?.provider?.baseUrl ?? '');
   const [model, setModel] = useState(entry?.provider?.models?.[0] ?? '');
   const [key, setKey] = useState('');
+  const [videoProtocol, setVideoProtocol] = useState(
+    existingProtocol(entry?.provider?.preset, entry?.provider?.baseUrl),
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const modelIsUrl = /^https?:\/\//i.test(model.trim());
   const existing = entry?.provider;
-  const preset = existing?.preset ?? CUSTOM_MEDIA_PRESETS[capability];
+  const preset =
+    capability === 'video' ? videoProtocol : (existing?.preset ?? CUSTOM_MEDIA_PRESETS[capability]);
   const slug = name
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '-')
@@ -51,7 +74,7 @@ export function CustomMediaPanel({
           kind: 'provider',
           id,
           preset,
-          baseUrl: baseUrl.trim().replace(/\/+$/, ''),
+          baseUrl: normalizeRelayBaseUrl(baseUrl, preset),
           models: [model.trim()],
           ...(key ? { apiKey: key } : {}),
         },
@@ -61,6 +84,7 @@ export function CustomMediaPanel({
         setError(result.message);
         return;
       }
+      setBaseUrl(normalizeRelayBaseUrl(baseUrl, preset));
       const slot = rootUse(result.view, capability, id).slot;
       if (slot && !slot.locked) {
         const assigned = await apply(modelChange(slot, modelRef(id, model.trim())), result.view);
@@ -79,15 +103,33 @@ export function CustomMediaPanel({
         ? '/audio/speech'
         : capability === 'asr'
           ? '/audio/transcriptions'
-          : '/videos/generations';
+          : videoProtocol === 'custom-minimax-video'
+            ? '/v2/video_generation'
+            : '/videos/generations';
   return (
     <div className="space-y-4 max-w-xl">
       <p className="text-sm text-muted-foreground">
         {capability === 'video'
-          ? '视频使用 xAI 兼容的异步接口：提交后通过 /videos/{request_id} 查询。'
+          ? videoProtocol === 'custom-minimax-video'
+            ? '使用 MiniMax H3 V2 异步协议。'
+            : '使用 xAI 兼容异步协议。'
           : '使用 OpenAI 兼容接口。'}{' '}
         请求路径：{endpoint}
       </p>
+      {capability === 'video' && (
+        <div className="space-y-2">
+          <Label htmlFor="video-relay-protocol">接口协议</Label>
+          <select
+            id="video-relay-protocol"
+            value={videoProtocol}
+            onChange={(e) => setVideoProtocol(e.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            <option value="custom-minimax-video">秘塔 / MiniMax H3 V2</option>
+            <option value="custom-xai-video">xAI 视频</option>
+          </select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>服务名称（英文或数字）</Label>
         <Input
@@ -101,8 +143,17 @@ export function CustomMediaPanel({
         <Label>Base URL</Label>
         <Input
           value={baseUrl}
-          onChange={(e) => setBaseUrl(e.target.value)}
-          placeholder="https://api.example.com/v1"
+          onChange={(e) => {
+            const value = e.target.value;
+            setBaseUrl(value);
+            if (!existing && capability === 'video' && value.includes('metaso.cn'))
+              setVideoProtocol('custom-minimax-video');
+          }}
+          placeholder={
+            capability === 'video' && videoProtocol === 'custom-minimax-video'
+              ? 'https://metaso.cn/api/minimax'
+              : 'https://api.example.com/v1'
+          }
         />
       </div>
       <div className="space-y-2">

@@ -78,7 +78,13 @@ import {
 } from '@/lib/model-settings/client';
 import { serviceEntries } from '@/lib/model-settings/services';
 
-import { chatPreset, makeView, withLlm, workspaceProvider } from '../model-settings/fixtures';
+import {
+  chatPreset,
+  makeView,
+  withLlm,
+  withSlots,
+  workspaceProvider,
+} from '../model-settings/fixtures';
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -704,7 +710,59 @@ it.each([
   const button = byText('settings.customProvider API');
   expect(button.closest('.overflow-y-auto')).toBeNull();
   click(button);
+  expect(button.getAttribute('aria-pressed')).toBe('true');
+  const selectedRows = [
+    ...document.body.querySelectorAll<HTMLElement>('button[aria-pressed="true"]'),
+  ];
+  expect(selectedRows).toEqual([button]);
   expect(document.body.textContent).toContain('Base URL');
   expect(document.body.textContent).toContain('模型 ID');
   expect(document.body.textContent).toContain('API Key');
+});
+
+it.each([
+  ['image', 'custom-openai-image', 'openai-image'],
+  ['video', 'custom-xai-video', 'grok-video'],
+  ['tts', 'custom-openai-tts', 'openai-tts'],
+  ['asr', 'custom-openai-asr', 'openai-whisper'],
+] as const)('shows saved custom %s model and in-use status', (tab, presetId, registryId) => {
+  const preset: PresetView = {
+    id: presetId,
+    name: 'Custom',
+    kind: 'single',
+    capabilities: { [tab]: { registryId, models: [{ id: 'my-model', name: 'my-model' }] } },
+    requiresBaseUrl: true,
+    customEndpoint: true,
+    recommended: {},
+  };
+  const provider = {
+    ...workspaceProvider('my-relay', preset),
+    baseUrl: 'https://example.com/v1',
+    models: ['my-model'],
+  };
+  const view = withSlots(makeView({ presets: [preset], providers: [provider] }), {
+    [tab]: {
+      assignment: 'my-relay:my-model',
+      effective: {
+        status: 'assigned',
+        resolvedAt: tab,
+        source: 'workspace',
+        requirements: [],
+        providerId: 'my-relay',
+        providerSource: 'workspace',
+        presetId,
+        registryId,
+        modelId: 'my-model',
+      },
+    },
+  });
+  const { apply } = recordingApply(() => view);
+  mount(createElement(ModelServicesPanel, { view, apply, tab, onTabChange: () => {} }));
+  const selected = document.body.querySelector<HTMLElement>('button[aria-pressed="true"]');
+  expect(selected?.textContent).toContain('my-relay');
+  expect(selected?.textContent).toContain('my-model');
+  expect(selected?.textContent).toContain('settings.serverConfig.inUse');
+  expect(
+    document.body.querySelector<HTMLInputElement>('input[placeholder="model-id"]')?.value,
+  ).toBe('my-model');
 });

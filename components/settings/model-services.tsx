@@ -301,7 +301,8 @@ export function ModelServicesPanel({
                   }
                 : {}),
             }))}
-            selectedProviderId={entry?.id ?? ''}
+            selectedProviderId={addingMedia ? '' : (entry?.id ?? '')}
+            addingProvider={addingMedia}
             onSelect={(id) => {
               setAddingMedia(false);
               select(id);

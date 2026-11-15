@@ -23,6 +23,7 @@ interface ProviderListProps {
   selectedProviderId: string;
   onSelect: (providerId: string) => void;
   onAddProvider?: () => void;
+  addingProvider?: boolean;
 }
 
 // 「模型服务」分区内的服务列表：样式对齐原型
@@ -32,6 +33,7 @@ export function ProviderList({
   selectedProviderId,
   onSelect,
   onAddProvider,
+  addingProvider = false,
 }: ProviderListProps) {
   const { t, locale } = useI18n();
   // The panel beside the list shows the selected service, which by default is
@@ -48,7 +50,13 @@ export function ProviderList({
         <button
           type="button"
           onClick={onAddProvider}
-          className="mb-2 flex w-full shrink-0 items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-2 py-2 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+          aria-pressed={addingProvider}
+          className={cn(
+            'mb-2 flex w-full shrink-0 items-center gap-2 rounded-lg border px-2 py-2 text-left text-xs font-medium text-primary transition-colors hover:bg-primary/10',
+            addingProvider
+              ? 'border-primary bg-primary/10 ring-1 ring-primary/40'
+              : 'border-primary/30 bg-primary/5',
+          )}
         >
           <Plus className="size-4 shrink-0" />
           {t('settings.addProviderButton')} {t('settings.customProvider')} API
